@@ -1,0 +1,49 @@
+{
+  "name": "arson-arena-firebase",
+  "version": "1.0.0",
+  "description": "ARSON Arena Gaming Tournament Platform with Firebase Integration",
+  "main": "index.html",
+  "scripts": {
+    "dev": "firebase emulators:start --only auth,firestore,hosting",
+    "dev:ui": "firebase emulators:start --only auth,firestore,hosting,ui",
+    "build": "echo 'No build step required for vanilla JS'",
+    "deploy": "firebase deploy",
+    "serve": "firebase serve",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "init-firebase": "firebase init",
+    "emulator:export": "firebase emulators:export ./firebase-export",
+    "emulator:import": "firebase emulators:start --import ./firebase-export",
+    "quota-check": "node scripts/check-quota.js"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.0.0",
+    "jsdom": "^28.0.0",
+    "vitest": "^1.6.1"
+  },
+  "type": "module",
+  "keywords": [
+    "gaming",
+    "tournament",
+    "firebase",
+    "real-time",
+    "pwa"
+  ],
+  "author": "ARSON Arena Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/arson-arena.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

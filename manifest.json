@@ -1,0 +1,134 @@
+{
+  "name": "ARSON Arena - Gaming Tournament Platform",
+  "short_name": "ARSON Arena",
+  "description": "The ultimate competitive gaming platform. Join tournaments, win prizes, and cash out instantly.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0A84FF",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["games", "entertainment", "sports"],
+  "icons": [
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=72",
+      "sizes": "72x72",
+      "type": "image/svg+xml",
+      "purpose": "badge"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=96",
+      "sizes": "96x96",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=128",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=144",
+      "sizes": "144x144",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=152",
+      "sizes": "152x152",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=192",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=384",
+      "sizes": "384x384",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "https://api.dicebear.com/7.x/shapes/svg?seed=arson&backgroundColor=0A84FF&size=512",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Join Tournament",
+      "short_name": "Join",
+      "description": "Quickly join an active tournament",
+      "url": "/?action=join",
+      "icons": [
+        {
+          "src": "https://api.dicebear.com/7.x/shapes/svg?seed=tournament&backgroundColor=30D158&size=96",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "View Wallet",
+      "short_name": "Wallet",
+      "description": "Check your balance and transactions",
+      "url": "/?view=wallet",
+      "icons": [
+        {
+          "src": "https://api.dicebear.com/7.x/shapes/svg?seed=wallet&backgroundColor=FF9F0A&size=96",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "short_name": "Ranks",
+      "description": "View global rankings",
+      "url": "/?view=leaderboard",
+      "icons": [
+        {
+          "src": "https://api.dicebear.com/7.x/shapes/svg?seed=trophy&backgroundColor=FF453A&size=96",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "https://via.placeholder.com/390x844/000000/0A84FF?text=ARSON+Arena+Dashboard",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard view showing active tournaments"
+    },
+    {
+      "src": "https://via.placeholder.com/1024x768/000000/0A84FF?text=ARSON+Arena+Desktop",
+      "sizes": "1024x768",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop view of the tournament platform"
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {
+      "protocol": "web+arson",
+      "url": "/?action=%s"
+    }
+  ],
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  }
+}

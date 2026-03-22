@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARSON Admin</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Firebase Configuration -->
+    <script type="importmap">
+    {
+      "imports": {
+        "firebase/app": "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js",
+        "firebase/auth": "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js",
+        "firebase/firestore": "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js",
+        "firebase/messaging": "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js",
+        "firebase/analytics": "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"
+      }
+    }
+    </script>
+    <script type="module" src="firebase-init.js"></script>
+    <script type="module" src="admin-integration.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        ios: {
+                            bg: '#000000',
+                            card: '#1C1C1E',
+                            cardHover: '#2C2C2E',
+                            blue: '#0A84FF',
+                            green: '#30D158',
+                            orange: '#FF9F0A',
+                            red: '#FF453A',
+                            subtext: '#8E8E93',
+                            border: 'rgba(255,255,255,0.1)'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #F2F2F7;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(28, 28, 30, 0.70);
+            backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .input-glass:focus {
+            border-color: #0A84FF;
+            outline: none;
+        }
+
+        .table-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+
+<body class="font-sans">
+    <!-- Global Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="flex flex-col items-center gap-4">
+            <div class="w-12 h-12 border-4 border-ios-orange border-t-transparent rounded-full spinner"></div>
+            <p class="text-white font-bold animate-pulse">Processing...</p>
+        </div>
+    </div>
+
+    <!-- ADMIN LOGIN SCREEN -->
+    <div id="admin-login" class="fixed inset-0 z-50 bg-black flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-md p-8 rounded-3xl shadow-2xl border border-ios-orange/30 text-center">
+            <div
+                class="w-16 h-16 bg-ios-orange/20 rounded-full flex items-center justify-center mx-auto mb-6 text-ios-orange">
+                <i class="ph-bold ph-shield-check text-3xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">ARSON Admin</h1>
+            <p class="text-ios-subtext mb-8">Secure Management Portal</p>
+            <form onsubmit="handleLogin(event)" class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold text-ios-subtext uppercase">Admin Email</label>
+                    <input type="email" id="admin-user" class="w-full mt-1 px-4 py-3 rounded-xl input-glass"
+                        value="admin@arson.com" required>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-ios-subtext uppercase">Password</label>
+                    <input type="password" id="admin-pass" class="w-full mt-1 px-4 py-3 rounded-xl input-glass"
+                        value="admin123" required>
+                </div>
+                <button type="submit"
+                    class="w-full py-3 bg-ios-orange text-black font-bold rounded-xl hover:bg-orange-400 transition mt-4">Enter
+                    Dashboard</button>
+            </form>
+            <div class="mt-6 text-xs text-ios-subtext">
+                <a href="index.html" class="hover:text-white underline">Back to User App</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="hidden max-w-7xl mx-auto px-4 py-8 pt-24">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 bg-ios-orange rounded-lg flex items-center justify-center text-black font-bold text-xl">
+                    A</div>
+                <div>
+                    <h1 class="text-2xl font-bold">ARSON Admin</h1>
+                    <p class="text-xs text-ios-subtext">Management Console</p>
+                </div>
+            </div>
+            <div class="flex gap-2 flex-wrap justify-center">
+                <button onclick="switchTab('users')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-bold"
+                    data-tab="users">Users</button>
+                <button onclick="switchTab('tournaments')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold"
+                    data-tab="tournaments">Tournaments</button>
+
+                <!-- Dropdown for Financials -->
+                <div class="relative group">
+                    <button
+                        class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold flex items-center gap-1"
+                        data-tab="transactions">
+                        Financial <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div
+                        class="absolute top-full left-0 mt-1 hidden group-hover:block w-48 glass-panel rounded-lg overflow-hidden z-50">
+                        <button onclick="switchTab('deposits')"
+                            class="block w-full text-left px-4 py-2 hover:bg-white/10 text-sm text-gray-300">Deposits</button>
+                        <button onclick="switchTab('withdrawals')"
+                            class="block w-full text-left px-4 py-2 hover:bg-white/10 text-sm text-gray-300">Withdrawals</button>
+                    </div>
+                </div>
+
+                <button onclick="switchTab('referrals')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold"
+                    data-tab="referrals">Referrals</button>
+                <button onclick="switchTab('leaderboard')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold"
+                    data-tab="leaderboard">Leaderboards</button>
+                <button onclick="switchTab('announcements')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold"
+                    data-tab="announcements">Announcements</button>
+                <button onclick="switchTab('status')"
+                    class="admin-tab-btn px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold"
+                    data-tab="status">Status</button>
+                <a href="index.html"
+                    class="px-4 py-2 rounded-lg border border-white/10 text-ios-subtext text-sm font-bold hover:bg-white/5 ml-4">Exit</a>
+            </div>
+        </header>
+
+        <!-- TAB: USERS -->
+        <div id="tab-users" class="admin-content hidden">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="font-bold text-lg">Registered Users</h2>
+                    <input type="text" id="search-user" placeholder="Search..."
+                        class="px-3 py-1 rounded-lg input-glass text-sm w-48" onkeyup="renderAdminUsers()">
+                </div>
+                <div id="admin-users-list" class="divide-y divide-white/5 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: TOURNAMENTS -->
+        <div id="tab-tournaments" class="admin-content hidden">
+            <div class="glass-panel rounded-2xl p-6 mb-6 border border-ios-green/30">
+                <h2 class="font-bold text-lg mb-4 text-ios-green">Create / Edit Tournament</h2>
+                <form onsubmit="handleTournamentSubmit(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input type="hidden" id="edit-tournament-id">
+                    <input type="text" id="t-title" placeholder="Title" class="px-4 py-2 rounded-xl input-glass"
+                        required>
+                    <input type="text" id="t-date" placeholder="Date (e.g. Today, 8PM)"
+                        class="px-4 py-2 rounded-xl input-glass" required>
+                    <select id="t-game" class="px-4 py-2 rounded-xl input-glass">
+                        <option value="PUBG Mobile">PUBG Mobile</option>
+                        <option value="FreeFire">FreeFire</option>
+                    </select>
+                    <input type="text" id="t-map" placeholder="Map (e.g. Erangel)"
+                        class="px-4 py-2 rounded-xl input-glass" required>
+                    <select id="t-type" class="px-4 py-2 rounded-xl input-glass">
+                        <option value="Solo">Solo</option>
+                        <option value="Duo">Duo</option>
+                        <option value="Squad">Squad</option>
+                    </select>
+                    <input type="number" id="t-fee" placeholder="Entry Fee (Coins)"
+                        class="px-4 py-2 rounded-xl input-glass" required>
+                    <input type="text" id="t-prize" placeholder="Prize (e.g. 1000 Coins)"
+                        class="px-4 py-2 rounded-xl input-glass" required>
+                    <!-- Image Link Input -->
+                    <div class="md:col-span-2">
+                        <input type="text" id="t-img" placeholder="Image Link (URL)"
+                            class="w-full px-4 py-2 rounded-xl input-glass" required>
+                        <p class="text-xs text-gray-500 mt-1">Paste direct image link (e.g. https://...jpg)</p>
+                    </div>
+                    <div class="md:col-span-2 flex gap-2">
+                        <button type="submit"
+                            class="px-6 py-2 bg-ios-green text-black font-bold rounded-lg hover:bg-green-400 transition">Save
+                            Tournament</button>
+                        <button type="button" onclick="resetForm()"
+                            class="px-6 py-2 bg-white/5 text-white font-bold rounded-lg hover:bg-white/10 transition">Clear</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10">
+                    <h2 class="font-bold text-lg">Active Tournaments</h2>
+                </div>
+                <div id="admin-tournaments-list" class="divide-y divide-white/5 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: DEPOSITS -->
+        <div id="tab-deposits" class="admin-content hidden">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="font-bold text-lg flex items-center gap-2"><i
+                            class="ph-bold ph-arrow-fat-down text-ios-green"></i> Deposit Requests</h2>
+                    <span class="text-xs text-ios-subtext">Verify User Proof</span>
+                </div>
+                <div id="admin-deposits-list" class="divide-y divide-white/5 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: WITHDRAWALS -->
+        <div id="tab-withdrawals" class="admin-content hidden">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="font-bold text-lg flex items-center gap-2"><i
+                            class="ph-bold ph-arrow-fat-up text-ios-orange"></i> Withdrawal Requests</h2>
+                    <span class="text-xs text-ios-subtext">Send Payments</span>
+                </div>
+                <div id="admin-withdrawals-list" class="divide-y divide-white/5 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: REFERRALS -->
+        <div id="tab-referrals" class="admin-content hidden">
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10">
+                    <h2 class="font-bold text-lg">Referral Verification</h2>
+                </div>
+                <div id="admin-referrals-list" class="divide-y divide-white/5 max-h-[60vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: LEADERBOARDS -->
+        <div id="tab-leaderboard" class="admin-content hidden">
+            <div class="flex gap-2 mb-6">
+                <button onclick="renderAdminLeaderboard('earnings')" id="admin-tab-earnings"
+                    class="px-4 py-2 rounded-lg bg-white/10 text-white text-sm font-bold">Earnings</button>
+                <button onclick="renderAdminLeaderboard('xp')" id="admin-tab-xp"
+                    class="px-4 py-2 rounded-lg hover:bg-white/5 text-ios-subtext text-sm font-bold">Experience</button>
+            </div>
+            <div id="admin-leaderboard-list" class="space-y-2"></div>
+        </div>
+
+        <!-- TAB: ANNOUNCEMENTS -->
+        <div id="tab-announcements" class="admin-content hidden">
+            <!-- Create Announcement Form -->
+            <div class="glass-panel rounded-2xl p-6 mb-6 border border-ios-blue/30">
+                <h2 class="font-bold text-lg mb-4 text-ios-blue flex items-center gap-2">
+                    <i class="ph-bold ph-megaphone"></i>
+                    Send System Announcement
+                </h2>
+                <form onsubmit="handleAnnouncementSubmit(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Title</label>
+                            <input type="text" id="announcement-title" placeholder="Announcement Title"
+                                class="w-full px-4 py-2 rounded-xl input-glass" required>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Type</label>
+                            <select id="announcement-type" class="w-full px-4 py-2 rounded-xl input-glass">
+                                <option value="info">📢 Information</option>
+                                <option value="success">✅ Success/Good News</option>
+                                <option value="warning">⚠️ Warning</option>
+                                <option value="error">🚨 Alert/Error</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Message</label>
+                        <textarea id="announcement-message" placeholder="Enter your announcement message..."
+                            class="w-full px-4 py-3 rounded-xl input-glass h-24 resize-none" required></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Priority</label>
+                            <select id="announcement-priority" class="w-full px-4 py-2 rounded-xl input-glass">
+                                <option value="normal">Normal</option>
+                                <option value="high">High Priority</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Persistent</label>
+                            <select id="announcement-persistent" class="w-full px-4 py-2 rounded-xl input-glass">
+                                <option value="false">Auto-dismiss</option>
+                                <option value="true">Stay visible</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Expires In</label>
+                            <select id="announcement-expires" class="w-full px-4 py-2 rounded-xl input-glass">
+                                <option value="">Never</option>
+                                <option value="1">1 Hour</option>
+                                <option value="6">6 Hours</option>
+                                <option value="24">1 Day</option>
+                                <option value="168">1 Week</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Action Button Text
+                                (Optional)</label>
+                            <input type="text" id="announcement-action-text" placeholder="e.g. Learn More, Join Now"
+                                class="w-full px-4 py-2 rounded-xl input-glass">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-ios-subtext uppercase block mb-2">Action URL
+                                (Optional)</label>
+                            <input type="url" id="announcement-action-url" placeholder="https://..."
+                                class="w-full px-4 py-2 rounded-xl input-glass">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit"
+                            class="px-6 py-2 bg-ios-blue text-white font-bold rounded-lg hover:bg-blue-500 transition flex items-center gap-2">
+                            <i class="ph-bold ph-paper-plane-tilt"></i>
+                            Send Announcement
+                        </button>
+                        <button type="button" onclick="resetAnnouncementForm()"
+                            class="px-6 py-2 bg-white/5 text-white font-bold rounded-lg hover:bg-white/10 transition">
+                            Clear
+                        </button>
+                        <button type="button" onclick="sendTestAnnouncement()"
+                            class="px-6 py-2 bg-ios-orange text-black font-bold rounded-lg hover:bg-orange-400 transition flex items-center gap-2">
+                            <i class="ph-bold ph-test-tube"></i>
+                            Test
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <button onclick="sendMaintenanceNotice()"
+                    class="glass-panel p-4 rounded-xl hover:bg-white/5 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 bg-ios-orange/20 rounded-lg flex items-center justify-center text-ios-orange">
+                            <i class="ph-bold ph-wrench"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Maintenance Notice</p>
+                            <p class="text-xs text-ios-subtext">Schedule maintenance alert</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button onclick="sendEmergencyAlert()"
+                    class="glass-panel p-4 rounded-xl hover:bg-white/5 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-ios-red/20 rounded-lg flex items-center justify-center text-ios-red">
+                            <i class="ph-bold ph-warning"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Emergency Alert</p>
+                            <p class="text-xs text-ios-subtext">Send urgent notification</p>
+                        </div>
+                    </div>
+                </button>
+
+                <button onclick="sendPromotionalAnnouncement()"
+                    class="glass-panel p-4 rounded-xl hover:bg-white/5 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 bg-ios-green/20 rounded-lg flex items-center justify-center text-ios-green">
+                            <i class="ph-bold ph-gift"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-white">Promotion</p>
+                            <p class="text-xs text-ios-subtext">Send promotional message</p>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Recent Announcements -->
+            <div class="glass-panel rounded-2xl overflow-hidden">
+                <div class="p-4 border-b border-white/10 flex justify-between items-center">
+                    <h2 class="font-bold text-lg">Recent Announcements</h2>
+                    <button onclick="renderAdminAnnouncements()" class="text-ios-blue hover:text-blue-400 text-sm">
+                        <i class="ph-bold ph-arrow-clockwise"></i> Refresh
+                    </button>
+                </div>
+                <div id="admin-announcements-list" class="divide-y divide-white/5 max-h-[40vh] overflow-y-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB: STATUS -->
+        <div id="tab-status" class="admin-content hidden">
+            <h2 class="font-bold text-lg mb-6 flex items-center gap-2">
+                <i class="ph-bold ph-chart-bar text-ios-orange"></i>
+                Firebase Quota & System Status
+            </h2>
+            <div id="admin-status-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Status cards will be injected here -->
+                <div class="p-8 text-center text-ios-subtext col-span-3">Loading system status...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div id="toast-container" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-50"></div>
+
+    <script>
+        // --- UI HELPERS & STATE ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.admin-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white/10', 'text-white');
+                btn.classList.add('text-ios-subtext');
+            });
+
+            const targetTab = document.getElementById(`tab-${tabName}`);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            const activeBtn = document.querySelector(`button[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white/10', 'text-white');
+                activeBtn.classList.remove('text-ios-subtext');
+            }
+
+            // Trigger specific render functions if they exist (overridden by admin-integration.js)
+            if (tabName === 'users' && window.renderAdminUsers) renderAdminUsers();
+            if (tabName === 'tournaments' && window.renderAdminTournaments) renderAdminTournaments();
+            if (tabName === 'deposits' && window.renderAdminDeposits) renderAdminDeposits();
+            if (tabName === 'withdrawals' && window.renderAdminWithdrawals) renderAdminWithdrawals();
+            if (tabName === 'referrals' && window.renderAdminReferrals) renderAdminReferrals();
+            if (tabName === 'leaderboard' && window.renderAdminLeaderboard) renderAdminLeaderboard('earnings');
+            if (tabName === 'announcements' && window.renderAdminAnnouncements) renderAdminAnnouncements();
+            if (tabName === 'status' && window.renderSystemStatus) renderSystemStatus();
+        }
+
+        function resetForm() {
+            document.getElementById('edit-tournament-id').value = '';
+            const form = document.querySelector('#tab-tournaments form');
+            if (form) form.reset();
+        }
+
+        function resetAnnouncementForm() {
+            const fields = [
+                'announcement-title', 'announcement-message', 'announcement-type',
+                'announcement-priority', 'announcement-persistent', 'announcement-expires',
+                'announcement-action-text', 'announcement-action-url'
+            ];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = el.tagName === 'SELECT' ? (id === 'announcement-type' ? 'info' : (id === 'announcement-priority' ? 'normal' : 'false')) : '';
+            });
+        }
+
+        // --- UTILS ---
+        function showToast(msg, type) {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-ios-green' : (type === 'error' ? 'bg-ios-red' : 'bg-ios-blue');
+            const text = type === 'success' ? 'text-black' : 'text-white';
+
+            toast.className = `${bg} ${text} px-6 py-3 rounded-full font-bold shadow-xl mb-3 animate-float-up flex items-center gap-2`;
+
+            const icon = document.createElement('i');
+            icon.className = type === 'success' ? 'ph-bold ph-check-circle' : 'ph-bold ph-warning-circle';
+
+            toast.appendChild(icon);
+            toast.appendChild(document.createTextNode(msg));
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+                toast.style.transition = 'all 0.5s ease';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
+        // Quick action helpers (calls notificationManager via AdminIntegration)
+        function sendMaintenanceNotice() {
+            const title = prompt('Maintenance Title:', '🔧 Scheduled Maintenance');
+            if (!title) return;
+            const message = prompt('Maintenance Message:', 'The platform will undergo maintenance.');
+            if (!message) return;
+
+            if (window.AdminFirebase?.notificationManager) {
+                window.AdminFirebase.notificationManager.sendMaintenanceNotice({ title, message })
+                    .then(() => showToast('Maintenance notification sent', 'success'))
+                    .catch(err => showToast(err.message, 'error'));
+            }
+        }
+
+        function sendEmergencyAlert() {
+            const title = prompt('Alert Title:', '🚨 Important Alert');
+            if (!title) return;
+            const message = prompt('Alert Message:', 'Critical system update.');
+            if (!message) return;
+
+            if (window.AdminFirebase?.notificationManager) {
+                window.AdminFirebase.notificationManager.sendEmergencyAlert({ title, message })
+                    .then(() => showToast('Emergency alert sent', 'success'))
+                    .catch(err => showToast(err.message, 'error'));
+            }
+        }
+
+        function sendPromotionalAnnouncement() {
+            const title = prompt('Promotion Title:', '🎉 Special Offer');
+            if (!title) return;
+            const message = prompt('Promotion Message:', 'New tournament series starting soon!');
+            if (!message) return;
+
+            if (window.AdminFirebase?.notificationManager) {
+                window.AdminFirebase.notificationManager.sendPromotionalAnnouncement({ title, message })
+                    .then(() => showToast('Promotion sent', 'success'))
+                    .catch(err => showToast(err.message, 'error'));
+            }
+        }
+    </script>
+
+</body>
+
+</html>
